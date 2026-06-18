@@ -12,6 +12,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Variables & Themes ─────────────────────────────── */
     :root {
       --bg:          #0a0a14;
       --surface:     #13131f;
@@ -28,10 +29,42 @@
       --btn-glow:    rgba(124,92,191,0.45);
     }
 
-    body.work  { --cur: var(--accent-work); --glow: rgba(255,77,41,0.38); --btn-glow: rgba(255,77,41,0.5); }
-    body.rest  { --cur: var(--accent-rest); --glow: rgba(0,212,170,0.35); --btn-glow: rgba(0,212,170,0.45); }
-    body.done  { --cur: #ffd700;            --glow: rgba(255,215,0,0.35); --btn-glow: rgba(255,215,0,0.5);  }
+    /* Phase colour overrides (applied via JS classList) */
+    body.work { --cur: var(--accent-work); --glow: rgba(255,77,41,0.38);  --btn-glow: rgba(255,77,41,0.5);  }
+    body.rest { --cur: var(--accent-rest); --glow: rgba(0,212,170,0.35);  --btn-glow: rgba(0,212,170,0.45); }
+    body.done { --cur: #ffd700;            --glow: rgba(255,215,0,0.35);  --btn-glow: rgba(255,215,0,0.5);  }
 
+    /* ── Neon Night theme ───────────────────────────────── */
+    body.neon-night {
+      --bg:          #03060f;
+      --surface:     #090e20;
+      --surface-hi:  #0f1530;
+      --accent-work: #ff0080;
+      --accent-rest: #00f5d4;
+      --accent-idle: #9d00ff;
+      --text-faint:  rgba(200,210,255,0.2);
+      --ring-track:  rgba(200,210,255,0.07);
+    }
+    body.neon-night.work { --glow: rgba(255,0,128,0.42);  --btn-glow: rgba(255,0,128,0.55);  }
+    body.neon-night.rest { --glow: rgba(0,245,212,0.38);  --btn-glow: rgba(0,245,212,0.52);  }
+    body.neon-night.done { --glow: rgba(255,215,0,0.35);  --btn-glow: rgba(255,215,0,0.5);   }
+
+    /* ── Retro Arcade theme ─────────────────────────────── */
+    body.retro-arcade {
+      --bg:          #0d0900;
+      --surface:     #1a1400;
+      --surface-hi:  #241d00;
+      --accent-work: #ffd900;
+      --accent-rest: #00ff41;
+      --accent-idle: #ff4500;
+      --text-faint:  rgba(255,240,150,0.2);
+      --ring-track:  rgba(255,240,150,0.07);
+    }
+    body.retro-arcade.work { --glow: rgba(255,217,0,0.4);  --btn-glow: rgba(255,217,0,0.52); }
+    body.retro-arcade.rest { --glow: rgba(0,255,65,0.35);  --btn-glow: rgba(0,255,65,0.48);  }
+    body.retro-arcade.done { --glow: rgba(255,69,0,0.35);  --btn-glow: rgba(255,69,0,0.5);   }
+
+    /* ── Base ───────────────────────────────────────────── */
     html, body {
       height: 100%;
       overflow: hidden;
@@ -42,7 +75,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* ambient radial glow behind everything */
     body::before {
       content: '';
       position: fixed;
@@ -78,6 +110,7 @@
       justify-content: space-between;
       width: 100%;
       padding-bottom: 8px;
+      gap: 8px;
     }
 
     .logo {
@@ -85,8 +118,26 @@
       font-weight: 800;
       letter-spacing: -0.3px;
       color: var(--text-dim);
+      flex-shrink: 0;
     }
     .logo em { color: var(--accent-work); font-style: normal; }
+
+    /* Streak badge */
+    .streak-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255,77,41,0.12);
+      border: 1px solid rgba(255,77,41,0.22);
+      border-radius: 20px;
+      padding: 5px 11px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-work);
+      flex-shrink: 0;
+      margin-right: auto;
+      margin-left: 8px;
+    }
 
     .icon-btn {
       background: var(--surface-hi);
@@ -97,6 +148,7 @@
       cursor: pointer;
       color: var(--text-dim);
       transition: transform 0.15s, background 0.2s;
+      flex-shrink: 0;
     }
     .icon-btn:active { transform: scale(0.9); }
 
@@ -111,10 +163,9 @@
       gap: 10px;
     }
 
-    /* Phase info */
     .phase-info {
       text-align: center;
-      min-height: 56px;
+      min-height: 52px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -131,11 +182,7 @@
       transition: color 0.6s ease;
     }
 
-    .round-label {
-      font-size: 15px;
-      color: var(--text-dim);
-      font-weight: 400;
-    }
+    .round-label { font-size: 15px; color: var(--text-dim); }
     .round-label b { color: var(--text); font-weight: 700; }
 
     /* ── Timer ring ─────────────────────────────────────── */
@@ -148,18 +195,13 @@
 
     .ring-svg {
       transform: rotate(-90deg);
-      transition: filter 0.7s ease;
       filter: drop-shadow(0 0 22px var(--glow));
       overflow: visible;
+      transition: filter 0.7s ease;
     }
 
-    .r-track {
-      fill: none;
-      stroke: var(--ring-track);
-      stroke-width: 11;
-    }
-
-    .r-prog {
+    .r-track { fill: none; stroke: var(--ring-track); stroke-width: 11; }
+    .r-prog  {
       fill: none;
       stroke: var(--cur);
       stroke-width: 11;
@@ -167,7 +209,6 @@
       transition: stroke-dashoffset 0.28s linear, stroke 0.65s ease;
     }
 
-    /* time inside ring */
     .time-wrap {
       position: absolute;
       display: flex;
@@ -182,14 +223,9 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: -3px;
       line-height: 1;
-      transition: color 0.6s ease;
     }
-
     .time-val.tick { animation: tick 0.2s ease-out; }
-    @keyframes tick {
-      0%   { transform: scale(1.07); }
-      100% { transform: scale(1);    }
-    }
+    @keyframes tick { 0% { transform: scale(1.07); } 100% { transform: scale(1); } }
 
     .next-label {
       font-size: 11px;
@@ -200,29 +236,13 @@
     }
 
     /* ── Round dots ─────────────────────────────────────── */
-    .dots {
-      display: flex;
-      gap: 7px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--ring-track);
-      transition: background 0.4s, transform 0.3s;
-    }
+    .dots { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
+    .dot  { width: 8px; height: 8px; border-radius: 50%; background: var(--ring-track); transition: background 0.4s, transform 0.3s; }
     .dot.done   { background: var(--accent-work); }
     .dot.active { background: var(--cur); transform: scale(1.45); }
 
     /* ── Controls ───────────────────────────────────────── */
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      margin-top: 4px;
-    }
+    .controls { display: flex; align-items: center; gap: 18px; margin-top: 4px; }
 
     .btn-play {
       background: var(--cur);
@@ -232,7 +252,6 @@
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       color: white;
-      font-size: 30px;
       box-shadow: 0 10px 36px var(--btn-glow);
       transition: background 0.55s ease, box-shadow 0.55s ease, transform 0.15s;
     }
@@ -251,59 +270,28 @@
     .btn-side:active { transform: scale(0.9); }
 
     /* ── Footer progress ────────────────────────────────── */
-    footer {
-      width: 100%;
-    }
+    footer { width: 100%; }
 
-    .prog-meta {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .prog-meta span {
-      font-size: 11px;
-      color: var(--text-faint);
-      font-weight: 600;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-    }
+    .prog-meta { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .prog-meta span { font-size: 11px; color: var(--text-faint); font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; }
 
-    .prog-track {
-      width: 100%;
-      height: 5px;
-      background: var(--ring-track);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .prog-fill {
-      height: 100%;
-      background: var(--cur);
-      border-radius: 3px;
-      transition: width 0.6s ease, background 0.6s ease;
-    }
+    .prog-track { width: 100%; height: 5px; background: var(--ring-track); border-radius: 3px; overflow: hidden; }
+    .prog-fill  { height: 100%; background: var(--cur); border-radius: 3px; transition: width 0.6s ease, background 0.6s ease; }
 
-    /* ── Countdown 3-2-1 overlay ────────────────────────── */
+    /* ── Countdown overlay ──────────────────────────────── */
     #countdown-layer {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 50;
-      pointer-events: none;
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; pointer-events: none;
     }
-
     #countdown-num {
       font-size: clamp(100px, 30vw, 160px);
       font-weight: 900;
       color: var(--text);
-      opacity: 0;
-      transform: scale(0.4);
+      opacity: 0; transform: scale(0.4);
       will-change: transform, opacity;
     }
-    #countdown-num.pop {
-      animation: countPop 0.85s ease forwards;
-    }
+    #countdown-num.pop { animation: countPop 0.85s ease forwards; }
     @keyframes countPop {
       0%   { opacity: 0; transform: scale(0.4); }
       18%  { opacity: 1; transform: scale(1.1); }
@@ -315,8 +303,7 @@
     /* ── Motivational popup ─────────────────────────────── */
     #moti {
       position: fixed;
-      bottom: 110px;
-      left: 50%;
+      bottom: 110px; left: 50%;
       transform: translateX(-50%) translateY(16px);
       background: rgba(255,255,255,0.09);
       backdrop-filter: blur(24px);
@@ -325,11 +312,9 @@
       border-radius: 22px;
       padding: 13px 22px;
       text-align: center;
-      pointer-events: none;
-      opacity: 0;
+      pointer-events: none; opacity: 0;
       z-index: 40;
-      max-width: calc(100vw - 48px);
-      min-width: 220px;
+      max-width: calc(100vw - 48px); min-width: 220px;
     }
     #moti.show { animation: motiIn 3s ease forwards; }
     @keyframes motiIn {
@@ -338,165 +323,137 @@
       78%  { opacity: 1; transform: translateX(-50%) translateY(0); }
       100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
     }
+    #moti .moti-ico { font-size: 22px; line-height: 1; margin-bottom: 4px; }
+    #moti .moti-txt { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
 
-    #moti .moti-ico  { font-size: 22px; line-height: 1; margin-bottom: 4px; }
-    #moti .moti-txt  { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
-
-    /* ── Settings overlay ───────────────────────────────── */
+    /* ── Settings overlay & panel ───────────────────────── */
     #s-overlay {
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: rgba(0,0,0,0.55);
-      z-index: 60;
-      opacity: 0;
-      pointer-events: none;
+      z-index: 60; opacity: 0; pointer-events: none;
       transition: opacity 0.3s ease;
     }
     #s-overlay.on { opacity: 1; pointer-events: all; }
 
-    /* Settings panel */
     #s-panel {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
+      position: fixed; bottom: 0; left: 50%;
       transform: translateX(-50%) translateY(100%);
-      width: 100%;
-      max-width: 430px;
+      width: 100%; max-width: 430px;
       background: var(--surface-hi);
       border-radius: 28px 28px 0 0;
       padding: 0 24px max(env(safe-area-inset-bottom), 28px);
       z-index: 61;
       transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-      max-height: 85vh;
-      overflow-y: auto;
+      max-height: 88vh; overflow-y: auto;
     }
     #s-panel.open { transform: translateX(-50%) translateY(0); }
 
-    .s-handle {
-      width: 38px; height: 4px;
-      background: rgba(255,255,255,0.18);
-      border-radius: 2px;
-      margin: 12px auto 18px;
-    }
+    .s-handle { width: 38px; height: 4px; background: rgba(255,255,255,0.18); border-radius: 2px; margin: 12px auto 18px; }
 
-    .s-hdr {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
+    .s-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
     .s-hdr h2 { font-size: 20px; font-weight: 700; }
     .s-close {
-      background: var(--surface);
-      border: none;
-      border-radius: 10px;
+      background: var(--surface); border: none; border-radius: 10px;
       width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      color: var(--text-dim);
-      font-size: 16px;
-      font-weight: 500;
+      cursor: pointer; color: var(--text-dim); font-size: 16px;
     }
 
     .s-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: flex; align-items: center; justify-content: space-between;
       padding: 15px 0;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .s-row:last-child { border-bottom: none; }
 
     .s-lbl { font-size: 15px; font-weight: 500; }
     .s-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 
-    .stepper {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .stepper { display: flex; align-items: center; gap: 10px; }
     .step-btn {
-      background: var(--surface);
-      border: none;
-      border-radius: 10px;
+      background: var(--surface); border: none; border-radius: 10px;
       width: 36px; height: 36px;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      color: var(--text);
-      font-size: 18px;
-      font-weight: 600;
-      transition: transform 0.1s, background 0.2s;
+      cursor: pointer; color: var(--text); font-size: 18px; font-weight: 600;
+      transition: transform 0.1s;
     }
     .step-btn:active { transform: scale(0.88); }
-    .step-val {
-      font-size: 15px;
-      font-weight: 700;
-      min-width: 48px;
-      text-align: center;
-    }
+    .step-val { font-size: 15px; font-weight: 700; min-width: 48px; text-align: center; }
 
     input[type=range] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 130px; height: 5px;
-      border-radius: 3px;
-      background: var(--surface);
-      outline: none;
+      -webkit-appearance: none; appearance: none;
+      width: 130px; height: 5px; border-radius: 3px;
+      background: var(--surface); outline: none;
     }
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: var(--accent-work);
-      cursor: pointer;
+      -webkit-appearance: none; width: 22px; height: 22px;
+      border-radius: 50%; background: var(--accent-work); cursor: pointer;
     }
 
     .toggle { position: relative; width: 50px; height: 28px; }
     .toggle input { opacity: 0; width: 0; height: 0; }
     .tog-sl {
-      position: absolute;
-      inset: 0;
-      background: var(--surface);
-      border-radius: 14px;
-      cursor: pointer;
+      position: absolute; inset: 0;
+      background: var(--surface); border-radius: 14px; cursor: pointer;
       transition: background 0.3s;
     }
     .tog-sl::before {
-      content: '';
-      position: absolute;
-      width: 20px; height: 20px;
-      left: 4px; top: 4px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.3s;
+      content: ''; position: absolute;
+      width: 20px; height: 20px; left: 4px; top: 4px;
+      background: white; border-radius: 50%; transition: transform 0.3s;
     }
     .toggle input:checked + .tog-sl { background: var(--accent-work); }
     .toggle input:checked + .tog-sl::before { transform: translateX(22px); }
 
-    /* ── Complete overlay ───────────────────────────────── */
+    /* ── Theme store ─────────────────────────────────────── */
+    .s-section-lbl {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 20px 0 10px;
+    }
+
+    .theme-grid { display: flex; gap: 10px; padding-bottom: 6px; }
+
+    .theme-opt {
+      flex: 1; position: relative;
+      background: var(--surface);
+      border: 2px solid transparent;
+      border-radius: 16px;
+      padding: 10px 8px;
+      cursor: pointer; text-align: center;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .theme-opt:active { transform: scale(0.95); }
+    .theme-opt.selected { border-color: var(--cur); }
+
+    .theme-prev { width: 100%; height: 34px; border-radius: 8px; margin-bottom: 7px; }
+    .tp-default { background: linear-gradient(135deg, #ff4d29 0%, #00d4aa 100%); }
+    .tp-neon    { background: linear-gradient(135deg, #ff0080 0%, #00f5d4 100%); }
+    .tp-retro   { background: linear-gradient(135deg, #ffd900 0%, #00ff41 100%); }
+
+    .theme-name { font-size: 10px; font-weight: 600; color: var(--text-dim); line-height: 1.4; }
+
+    .theme-lock {
+      position: absolute; top: 5px; right: 6px;
+      font-size: 11px; line-height: 1;
+    }
+
+    /* ── Done screen ─────────────────────────────────────── */
     #done-screen {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       background: rgba(10,10,20,0.96);
-      z-index: 70;
-      opacity: 0;
-      pointer-events: none;
+      z-index: 70; opacity: 0; pointer-events: none;
       transition: opacity 0.5s ease;
-      padding: 32px;
-      text-align: center;
+      padding: 28px 24px max(env(safe-area-inset-bottom), 28px);
+      text-align: center; gap: 14px;
+      overflow-y: auto;
     }
     #done-screen.show { opacity: 1; pointer-events: all; }
 
-    .done-trophy {
-      font-size: 88px;
-      line-height: 1;
-      margin-bottom: 16px;
-      animation: trophyIn 0.55s 0.2s ease both;
-    }
+    .done-trophy { font-size: 76px; line-height: 1; flex-shrink: 0; }
+    #done-screen.show .done-trophy { animation: trophyIn 0.55s 0.15s ease both; }
     @keyframes trophyIn {
       from { transform: scale(0) rotate(-25deg); opacity: 0; }
       60%  { transform: scale(1.15) rotate(6deg); opacity: 1; }
@@ -504,69 +461,185 @@
     }
 
     .done-title {
-      font-size: 34px;
-      font-weight: 900;
+      font-size: 32px; font-weight: 900;
       background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 8px;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; flex-shrink: 0;
+    }
+    #done-screen.show .done-title  { animation: riseUp 0.4s  0.3s  ease both; }
+    #done-screen.show .fact-card   { animation: riseUp 0.4s  0.45s ease both; }
+    #done-screen.show .done-streak { animation: riseUp 0.35s 0.65s ease both; }
+    #done-screen.show .btn-again   { animation: riseUp 0.35s 0.8s  ease both; }
+    @keyframes riseUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .done-sub {
-      font-size: 16px;
-      color: var(--text-dim);
-      margin-bottom: 40px;
-      max-width: 280px;
-      line-height: 1.5;
+    .done-streak {
+      display: none;
+      align-items: center; gap: 6px;
+      background: rgba(255,77,41,0.1);
+      border: 1px solid rgba(255,77,41,0.2);
+      border-radius: 20px;
+      padding: 7px 16px;
+      font-size: 13px; font-weight: 600;
+      color: var(--accent-work);
+      flex-shrink: 0;
     }
 
     .btn-again {
-      background: var(--accent-work);
-      color: white;
-      border: none;
-      border-radius: 22px;
-      padding: 16px 52px;
-      font-size: 18px;
-      font-weight: 700;
-      cursor: pointer;
+      background: var(--accent-work); color: white; border: none;
+      border-radius: 22px; padding: 16px 52px;
+      font-size: 18px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 10px 36px rgba(255,77,41,0.4);
       transition: transform 0.15s;
-      box-shadow: 0 10px 36px rgba(255,77,41,0.45);
+      flex-shrink: 0;
     }
     .btn-again:active { transform: scale(0.94); }
 
+    /* ── Physiological Fact Card ─────────────────────────── */
+    .fact-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 16px 18px 12px;
+      width: 100%; max-width: 320px;
+      position: relative; overflow: hidden;
+      cursor: pointer; text-align: left;
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+    .fact-card:active { transform: scale(0.98); }
+    .fact-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent-work), var(--accent-rest));
+    }
+
+    .fact-icon { font-size: 22px; line-height: 1; margin-bottom: 7px; }
+    .fact-hl {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--cur); margin-bottom: 6px;
+      transition: color 0.6s;
+    }
+    .fact-body { font-size: 13px; color: var(--text-dim); line-height: 1.55; }
+
+    /* EPOC timestamp */
+    .epoc-blk {
+      margin-top: 11px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px; padding: 10px 12px;
+      display: none;
+    }
+    .epoc-blk.on { display: block; }
+    .epoc-lbl {
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-faint); margin-bottom: 3px;
+    }
+    .epoc-time {
+      font-size: 19px; font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text); letter-spacing: -0.5px;
+    }
+
+    /* fact nav dots */
+    .fact-dots { display: flex; gap: 5px; margin-top: 11px; }
+    .f-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--text-faint);
+      transition: background 0.3s, transform 0.3s;
+    }
+    .f-dot.on { background: var(--cur); transform: scale(1.4); }
+    .fact-hint { font-size: 9px; color: var(--text-faint); text-align: right; margin-top: 7px; }
+
+    /* ── Streak broken modal ─────────────────────────────── */
+    #streak-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 90; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    #streak-modal.show { opacity: 1; pointer-events: all; }
+
+    .sm-card {
+      width: 100%; max-width: 430px;
+      background: var(--surface-hi);
+      border-radius: 28px 28px 0 0;
+      padding: 0 24px max(env(safe-area-inset-bottom), 28px);
+      transform: translateY(100%);
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    #streak-modal.show .sm-card { transform: translateY(0); }
+
+    .sm-handle { width: 38px; height: 4px; background: rgba(255,255,255,0.18); border-radius: 2px; margin: 12px auto 20px; }
+    .sm-break-icon { font-size: 52px; text-align: center; line-height: 1; margin-bottom: 10px; }
+    .sm-title { font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .sm-body { font-size: 14px; color: var(--text-dim); text-align: center; line-height: 1.55; margin-bottom: 20px; }
+    .sm-body strong { color: var(--text); }
+
+    .shield-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface);
+      border-radius: 16px; padding: 14px 16px; margin-bottom: 16px;
+    }
+    .shield-ico { font-size: 28px; flex-shrink: 0; }
+    .shield-info { flex: 1; min-width: 0; }
+    .shield-name { font-size: 15px; font-weight: 700; }
+    .shield-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .shield-qty { font-size: 16px; font-weight: 800; color: var(--accent-work); flex-shrink: 0; }
+    .shield-qty.empty { color: var(--text-faint); }
+
+    .btn-shield {
+      width: 100%; background: var(--accent-work); color: white; border: none;
+      border-radius: 16px; padding: 15px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      margin-bottom: 10px;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .btn-shield:active { transform: scale(0.97); }
+    .btn-shield:disabled { opacity: 0.45; cursor: default; }
+
+    .btn-fresh {
+      width: 100%; background: none; color: var(--text-dim); border: none;
+      padding: 12px; font-size: 15px; cursor: pointer;
+    }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 110px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--surface-hi);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px; padding: 10px 20px;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      z-index: 200; pointer-events: none; opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
     /* ── Confetti ───────────────────────────────────────── */
-    .confetti-p {
-      position: fixed;
-      pointer-events: none;
-      z-index: 80;
-      border-radius: 2px;
-    }
-    @keyframes cfall {
-      to { transform: translateY(105vh) rotate(540deg); opacity: 0; }
-    }
+    .confetti-p { position: fixed; pointer-events: none; z-index: 80; border-radius: 2px; }
+    @keyframes cfall { to { transform: translateY(105vh) rotate(540deg); opacity: 0; } }
 
     /* ── Wake lock dot ──────────────────────────────────── */
     #wake-dot {
       position: fixed;
-      top: max(env(safe-area-inset-top), 10px);
-      right: 12px;
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--accent-rest);
-      opacity: 0;
-      z-index: 5;
+      top: max(env(safe-area-inset-top), 10px); right: 12px;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent-rest); opacity: 0; z-index: 5;
       transition: opacity 0.4s;
     }
     #wake-dot.on { opacity: 1; animation: wdPulse 2.5s infinite; }
-    @keyframes wdPulse {
-      0%,100% { opacity: 1; } 50% { opacity: 0.2; }
-    }
+    @keyframes wdPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
   </style>
 </head>
 <body>
 
-  <!-- wake lock indicator -->
+  <!-- Wake lock indicator -->
   <div id="wake-dot"></div>
 
   <!-- 3-2-1 countdown layer -->
@@ -580,18 +653,70 @@
     <div class="moti-txt" id="moti-txt"></div>
   </div>
 
-  <!-- Completion screen -->
+  <!-- Toast notification -->
+  <div id="toast"></div>
+
+  <!-- ── Streak Broken Modal ──────────────────────────────── -->
+  <div id="streak-modal">
+    <div class="sm-card">
+      <div class="sm-handle"></div>
+      <div class="sm-break-icon">💔</div>
+      <div class="sm-title">Streak Broken</div>
+      <p class="sm-body">
+        Your <strong id="sm-days">7</strong>-day streak ended.<br>
+        Use a Shield to restore it — or start fresh.
+      </p>
+
+      <div class="shield-row">
+        <div class="shield-ico">🛡️</div>
+        <div class="shield-info">
+          <div class="shield-name">Streak Shield</div>
+          <div class="shield-desc">Saves your streak when life gets in the way</div>
+        </div>
+        <div class="shield-qty" id="shield-qty">×1</div>
+      </div>
+
+      <button class="btn-shield" id="btn-shield">Use Shield 🛡️</button>
+      <button class="btn-fresh"  id="btn-fresh">Start Fresh</button>
+    </div>
+  </div>
+
+  <!-- ── Completion Screen ────────────────────────────────── -->
   <div id="done-screen">
     <div class="done-trophy">🏆</div>
     <div class="done-title">Workout Complete!</div>
-    <div class="done-sub" id="done-sub">Every single round. You crushed it.</div>
+
+    <!-- Physiological Fact Card (rotates through 3 science angles) -->
+    <div class="fact-card" id="fact-card" role="region" aria-label="Science insight">
+      <div class="fact-icon" id="fact-icon">⚡</div>
+      <div class="fact-hl"   id="fact-hl">Afterburn Active</div>
+      <div class="fact-body" id="fact-body"></div>
+      <!-- EPOC timestamp block — only visible for Afterburn fact -->
+      <div class="epoc-blk" id="epoc-blk">
+        <div class="epoc-lbl">Metabolism elevated until</div>
+        <div class="epoc-time" id="epoc-time"></div>
+      </div>
+      <div class="fact-dots">
+        <div class="f-dot on"></div>
+        <div class="f-dot"></div>
+        <div class="f-dot"></div>
+      </div>
+      <div class="fact-hint">tap to discover more science ›</div>
+    </div>
+
+    <!-- Streak achievement badge -->
+    <div class="done-streak" id="done-streak">
+      <span>🔥</span>
+      <span id="done-streak-txt">5-day streak!</span>
+    </div>
+
     <button class="btn-again" id="btn-again">Go Again</button>
   </div>
 
   <!-- Settings overlay -->
   <div id="s-overlay"></div>
 
-  <!-- Settings panel -->
+  <!-- ── Settings Panel ───────────────────────────────────── -->
   <div id="s-panel" role="dialog" aria-label="Settings">
     <div class="s-handle"></div>
     <div class="s-hdr">
@@ -599,7 +724,6 @@
       <button class="s-close" id="s-close" aria-label="Close settings">✕</button>
     </div>
 
-    <!-- Work time -->
     <div class="s-row">
       <div>
         <div class="s-lbl">Work Time</div>
@@ -612,7 +736,6 @@
       </div>
     </div>
 
-    <!-- Rest time -->
     <div class="s-row">
       <div>
         <div class="s-lbl">Rest Time</div>
@@ -625,7 +748,6 @@
       </div>
     </div>
 
-    <!-- Rounds -->
     <div class="s-row">
       <div>
         <div class="s-lbl">Rounds</div>
@@ -638,7 +760,6 @@
       </div>
     </div>
 
-    <!-- Volume -->
     <div class="s-row">
       <div><div class="s-lbl">Volume</div></div>
       <div class="stepper" style="gap:8px">
@@ -648,7 +769,6 @@
       </div>
     </div>
 
-    <!-- Sound toggle -->
     <div class="s-row">
       <div><div class="s-lbl">Sound Effects</div></div>
       <label class="toggle">
@@ -657,7 +777,6 @@
       </label>
     </div>
 
-    <!-- Countdown toggle -->
     <div class="s-row">
       <div>
         <div class="s-lbl">3-2-1 Countdown</div>
@@ -669,12 +788,37 @@
       </label>
     </div>
 
+    <!-- ── Premium Themes ────────────────────────────────── -->
+    <div class="s-section-lbl">Premium Themes</div>
+    <div class="theme-grid">
+      <button class="theme-opt selected" data-theme="default">
+        <div class="theme-prev tp-default"></div>
+        <div class="theme-name">Default</div>
+      </button>
+      <button class="theme-opt locked" data-theme="neon-night">
+        <div class="theme-prev tp-neon"></div>
+        <div class="theme-name">Neon Night</div>
+        <div class="theme-lock">🔒</div>
+      </button>
+      <button class="theme-opt locked" data-theme="retro-arcade">
+        <div class="theme-prev tp-retro"></div>
+        <div class="theme-name">Retro Arcade</div>
+        <div class="theme-lock">🔒</div>
+      </button>
+    </div>
+
   </div>
 
-  <!-- App shell -->
+  <!-- ── App Shell ────────────────────────────────────────── -->
   <div id="app">
     <header>
       <div class="logo">HIIT<em>.</em></div>
+
+      <!-- Streak badge (visible when streak ≥ 2) -->
+      <div class="streak-badge" id="streak-badge">
+        🔥 <span id="streak-num">0</span>
+      </div>
+
       <button class="icon-btn" id="btn-settings" aria-label="Open settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -700,13 +844,11 @@
         </div>
       </div>
 
-      <!-- SVG ring  (r=120, circ≈753.98) -->
       <div class="ring-wrap">
         <svg class="ring-svg" width="270" height="270" viewBox="0 0 270 270">
           <circle class="r-track" cx="135" cy="135" r="118"/>
           <circle class="r-prog" id="r-prog" cx="135" cy="135" r="118"
-            stroke-dasharray="741.42"
-            stroke-dashoffset="741.42"/>
+            stroke-dasharray="741.42" stroke-dashoffset="741.42"/>
         </svg>
         <div class="time-wrap">
           <div class="time-val" id="time-val">00:45</div>
@@ -717,7 +859,6 @@
       <div class="dots" id="dots"></div>
 
       <div class="controls">
-        <!-- Reset -->
         <button class="btn-side" id="btn-reset" aria-label="Reset">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -726,7 +867,6 @@
           </svg>
         </button>
 
-        <!-- Play / Pause -->
         <button class="btn-play" id="btn-play" aria-label="Play">
           <svg id="ico-play" width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
             <polygon points="6,3 20,12 6,21"/>
@@ -738,7 +878,6 @@
           </svg>
         </button>
 
-        <!-- Skip -->
         <button class="btn-side" id="btn-skip" aria-label="Skip phase">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -764,8 +903,32 @@
   'use strict';
 
   // ── Constants ─────────────────────────────────────────
-  const CIRC = 741.42;   // 2π × 118
+  const CIRC = 741.42; // 2π × 118
 
+  // ── Physiological Fact Engine ─────────────────────────
+  // Three science-backed angles, rotated after each workout.
+  const PHYSIO_FACTS = [
+    {
+      icon: '⚡',
+      hl:   'Afterburn Active',
+      body: 'Your body is now in EPOC — oxygen debt repayment mode. You\'ll burn 6–15% more calories returning to resting metabolic rate.',
+      epoc: true, // triggers live EPOC timestamp
+    },
+    {
+      icon: '🧬',
+      hl:   'Mitochondrial Reset',
+      body: 'Workout complete. You just triggered a cellular reset — intervals are proven to boost muscle mitochondrial capacity by up to 69%, actively reversing cellular aging.',
+      epoc: false,
+    },
+    {
+      icon: '🛡️',
+      hl:   'DNA Protected',
+      body: 'Intervals complete. High-intensity training stabilizes telomere length, shielding your DNA from cellular decay and slowing biological aging at the source.',
+      epoc: false,
+    },
+  ];
+
+  // ── Mid-workout Motivational Messages ────────────────
   const MSGS = {
     work: {
       30: [
@@ -795,45 +958,24 @@
     },
   };
 
-  const DONE_MSGS = [
-    "You absolutely crushed every single round.",
-    "That's what champions are made of.",
-    "Beast mode: activated. You did it!",
-    "Incredible discipline. Be proud.",
-    "Not everyone finishes. You did.",
-  ];
-
   // ── Settings ──────────────────────────────────────────
-  let cfg = {
-    work:      45,
-    rest:      15,
-    rounds:    8,
-    volume:    0.7,
-    sound:     true,
-    countdown: true,
-  };
+  let cfg = { work: 45, rest: 15, rounds: 8, volume: 0.7, sound: true, countdown: true };
 
   function loadCfg() {
-    try {
-      const s = JSON.parse(localStorage.getItem('hiit_cfg') || '{}');
-      Object.assign(cfg, s);
-    } catch(_) {}
+    try { Object.assign(cfg, JSON.parse(localStorage.getItem('hiit_cfg') || '{}')); } catch(_) {}
   }
-
   function saveCfg() {
     try { localStorage.setItem('hiit_cfg', JSON.stringify(cfg)); } catch(_) {}
   }
 
   // ── App state ─────────────────────────────────────────
-  let phase   = 'idle';   // idle | work | rest | done
+  let phase   = 'idle';
   let round   = 1;
-  let tRem    = cfg.work; // seconds remaining in current phase
-  let tPhase  = cfg.work; // full duration of current phase
+  let tRem    = cfg.work;
+  let tPhase  = cfg.work;
   let running = false;
-
-  let startMs   = 0;   // Date.now() when current stint began
-  let startRem  = 0;   // tRem when current stint began
-
+  let startMs = 0;
+  let startRem = 0;
   let ivl       = null;
   let wakeLock  = null;
   let milestones = new Set();
@@ -841,8 +983,8 @@
   let motiLast   = 0;
   let motiTimer  = null;
 
-  // ── DOM ───────────────────────────────────────────────
-  const q  = id => document.getElementById(id);
+  // ── DOM refs ──────────────────────────────────────────
+  const q = id => document.getElementById(id);
   const phaseLbl  = q('phase-lbl');
   const rCur      = q('r-cur');
   const rTot      = q('r-tot');
@@ -853,8 +995,6 @@
   const btnPlay   = q('btn-play');
   const icoPlay   = q('ico-play');
   const icoPause  = q('ico-pause');
-  const btnReset  = q('btn-reset');
-  const btnSkip   = q('btn-skip');
   const progFill  = q('prog-fill');
   const progPct   = q('prog-pct');
   const totalTime = q('total-time');
@@ -862,17 +1002,13 @@
   const motiIco   = q('moti-ico');
   const motiTxt   = q('moti-txt');
   const doneScr   = q('done-screen');
-  const doneSub   = q('done-sub');
-  const btnAgain  = q('btn-again');
   const sPanel    = q('s-panel');
   const sOverlay  = q('s-overlay');
   const wakeDot   = q('wake-dot');
-  const cdLayer   = q('countdown-layer');
   const cdNum     = q('countdown-num');
 
   // ── Audio ─────────────────────────────────────────────
-  let actx = null;
-  let actxReady = false;
+  let actx = null, actxReady = false;
 
   function ensureAudio() {
     if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -883,13 +1019,10 @@
   function tone(freq, dur, type = 'sine', vol = 0.35) {
     if (!cfg.sound || !actxReady) return;
     try {
-      const o = actx.createOscillator();
-      const g = actx.createGain();
+      const o = actx.createOscillator(), g = actx.createGain();
       o.connect(g); g.connect(actx.destination);
-      o.type = type;
-      o.frequency.value = freq;
-      const v = cfg.volume * vol;
-      g.gain.setValueAtTime(v, actx.currentTime);
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(cfg.volume * vol, actx.currentTime);
       g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
       o.start(); o.stop(actx.currentTime + dur);
     } catch(_) {}
@@ -900,30 +1033,18 @@
     setTimeout(() => tone(554, 0.1, 'triangle', 0.5), 95);
     setTimeout(() => tone(659, 0.22, 'triangle', 0.6), 190);
   }
-
   function sndRestStart() {
     tone(659, 0.13, 'sine', 0.4);
     setTimeout(() => tone(554, 0.13, 'sine', 0.4), 120);
     setTimeout(() => tone(440, 0.28, 'sine', 0.4), 240);
   }
-
-  function sndBeep(last) {
-    tone(last ? 900 : 660, 0.08, 'square', 0.28);
-  }
-
+  function sndBeep(last) { tone(last ? 900 : 660, 0.08, 'square', 0.28); }
   function sndCd(n) {
-    if (n === 0) {
-      tone(880, 0.12, 'triangle', 0.55);
-      setTimeout(() => tone(1100, 0.28, 'triangle', 0.65), 100);
-    } else {
-      tone(440, 0.12, 'sine', 0.45);
-    }
+    if (n === 0) { tone(880, 0.12, 'triangle', 0.55); setTimeout(() => tone(1100, 0.28, 'triangle', 0.65), 100); }
+    else tone(440, 0.12, 'sine', 0.45);
   }
-
   function sndDone() {
-    [523, 659, 784, 1047].forEach((f, i) =>
-      setTimeout(() => tone(f, 0.32, 'triangle', 0.5), i * 115)
-    );
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.32, 'triangle', 0.5), i * 115));
   }
 
   // ── Wake Lock ─────────────────────────────────────────
@@ -936,22 +1057,18 @@
       }
     } catch(_) {}
   }
-
   function dropWake() {
     if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
     wakeDot.classList.remove('on');
   }
-
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && running) acquireWake();
   });
 
   // ── Haptic ────────────────────────────────────────────
-  function buzz(p) {
-    try { if ('vibrate' in navigator) navigator.vibrate(p); } catch(_) {}
-  }
+  function buzz(p) { try { if ('vibrate' in navigator) navigator.vibrate(p); } catch(_) {} }
 
-  // ── Motivational ─────────────────────────────────────
+  // ── Mid-workout motivational messages ─────────────────
   function showMoti(msg) {
     const now = Date.now();
     if (now - motiLast < 3200) return;
@@ -976,6 +1093,207 @@
     showMoti(pick(pool));
   }
 
+  // ── Toast ─────────────────────────────────────────────
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = q('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ── Streak system (Loss Aversion) ─────────────────────
+  // Data shape: { count, lastDate (ISO), shields, best, modalDate }
+  let streak = { count: 0, lastDate: null, shields: 1, best: 0, modalDate: null };
+
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+  function daysBetween(iso) {
+    if (!iso) return Infinity;
+    const then = new Date(iso + 'T00:00:00');
+    const now  = new Date(); now.setHours(0, 0, 0, 0);
+    return Math.round((now - then) / 86400000);
+  }
+
+  function loadStreak() {
+    try {
+      const s = JSON.parse(localStorage.getItem('hiit_streak') || 'null');
+      if (s) streak = Object.assign({ shields: 1, best: 0, modalDate: null }, s);
+    } catch(_) {}
+  }
+
+  function saveStreak() {
+    try { localStorage.setItem('hiit_streak', JSON.stringify(streak)); } catch(_) {}
+  }
+
+  // Call after a workout finishes
+  function recordWorkout() {
+    const today = todayStr();
+    if (streak.lastDate === today) return; // already counted today
+    const diff = daysBetween(streak.lastDate);
+    streak.count    = (diff === 1) ? streak.count + 1 : 1;
+    streak.lastDate = today;
+    streak.best     = Math.max(streak.best, streak.count);
+    saveStreak();
+  }
+
+  function updateStreakBadge() {
+    const badge = q('streak-badge');
+    const num   = q('streak-num');
+    if (streak.count >= 2) {
+      badge.style.display = 'flex';
+      num.textContent = streak.count;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Check on app open — show modal if streak was broken
+  function checkStreakOnOpen() {
+    const diff = daysBetween(streak.lastDate);
+
+    if (diff <= 1) { updateStreakBadge(); return; } // streak intact
+
+    if (streak.count >= 2 && streak.modalDate !== todayStr()) {
+      // Meaningful broken streak — show modal once per day
+      setTimeout(() => showStreakModal(), 650);
+    } else if (diff > 1 && streak.count < 2) {
+      // Trivial streak — silently reset, no modal
+      streak.count    = 0;
+      streak.lastDate = null;
+      saveStreak();
+    }
+    updateStreakBadge();
+  }
+
+  function showStreakModal() {
+    streak.modalDate = todayStr();
+    saveStreak();
+
+    q('sm-days').textContent = streak.count;
+    const qty    = q('shield-qty');
+    const btnSh  = q('btn-shield');
+
+    if (streak.shields > 0) {
+      qty.textContent = `×${streak.shields}`;
+      qty.classList.remove('empty');
+      btnSh.disabled    = false;
+      btnSh.textContent = 'Use Shield 🛡️';
+    } else {
+      qty.textContent = '×0';
+      qty.classList.add('empty');
+      btnSh.disabled    = false;
+      // Placeholder for rewarded-ad CTA
+      btnSh.textContent = 'Watch Ad for Shield 📺';
+    }
+    q('streak-modal').classList.add('show');
+  }
+
+  function hideStreakModal() { q('streak-modal').classList.remove('show'); }
+
+  function useShield() {
+    if (streak.shields <= 0) {
+      triggerRewardedAd();
+      return;
+    }
+    streak.shields -= 1;
+    // Roll lastDate back to yesterday so the chain stays consecutive
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    streak.lastDate = yesterday.toISOString().slice(0, 10);
+    saveStreak();
+    hideStreakModal();
+    updateStreakBadge();
+    showToast('🛡️ Shield activated! Streak protected.');
+  }
+
+  function startFresh() {
+    streak.count    = 0;
+    streak.lastDate = null;
+    saveStreak();
+    hideStreakModal();
+    updateStreakBadge();
+  }
+
+  function triggerRewardedAd() {
+    // ── MONETISATION HOOK ─────────────────────────────────
+    // Replace this body with your ad-network SDK call, e.g.:
+    //   rewardedAd.show().then(() => { streak.shields += 1; saveStreak(); useShield(); });
+    // ─────────────────────────────────────────────────────
+    console.log('[Ad Hook] triggerRewardedAd() — wire your ad-network SDK here.');
+    showToast('📺 Ad integration not yet configured.');
+  }
+
+  // ── Theme system (Reciprocity & Customisation) ────────
+  let currentTheme = 'default';
+
+  function setPhaseClass(cls) {
+    // Remove only phase classes — preserves theme class on body
+    document.body.classList.remove('work', 'rest', 'done');
+    if (cls) document.body.classList.add(cls);
+  }
+
+  function applyTheme(name) {
+    document.body.classList.remove('neon-night', 'retro-arcade');
+    if (name !== 'default') document.body.classList.add(name);
+    currentTheme = name;
+    document.querySelectorAll('.theme-opt').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.theme === name);
+    });
+  }
+
+  function loadTheme() {
+    try { applyTheme(localStorage.getItem('hiit_theme') || 'default'); } catch(_) {}
+  }
+
+  function saveTheme(name) {
+    try { localStorage.setItem('hiit_theme', name); } catch(_) {}
+  }
+
+  // ── Physiological Fact Rotation ───────────────────────
+  let factIdx   = 0;
+  let factTimer = null;
+
+  // Formats a timestamp 24 h from now for the EPOC display
+  function formatEPOC() {
+    const t  = new Date(Date.now() + 86400000);
+    let   h  = t.getHours();
+    const m  = String(t.getMinutes()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return `${days[t.getDay()]} ${h}:${m} ${ap}`;
+  }
+
+  function showFact(idx) {
+    factIdx = ((idx % PHYSIO_FACTS.length) + PHYSIO_FACTS.length) % PHYSIO_FACTS.length;
+    const f = PHYSIO_FACTS[factIdx];
+    q('fact-icon').textContent = f.icon;
+    q('fact-hl').textContent   = f.hl;
+    q('fact-body').textContent = f.body;
+
+    const epoc = q('epoc-blk');
+    if (f.epoc) {
+      epoc.classList.add('on');
+      q('epoc-time').textContent = formatEPOC();
+    } else {
+      epoc.classList.remove('on');
+    }
+
+    document.querySelectorAll('.f-dot').forEach((d, i) => {
+      d.classList.toggle('on', i === factIdx);
+    });
+  }
+
+  function startFactRotation(startAt = 0) {
+    showFact(startAt);
+    clearInterval(factTimer);
+    factTimer = setInterval(() => showFact(factIdx + 1), 5000);
+  }
+
+  function stopFactRotation() { clearInterval(factTimer); }
+
   // ── Formatting ────────────────────────────────────────
   function fmt(s) {
     const m = Math.floor(s / 60), r = s % 60;
@@ -992,17 +1310,14 @@
     timeVal.textContent = fmt(tRem);
     setRing(tPhase > 0 ? tRem / tPhase : 0);
 
-    // Phase colours
-    document.body.className = phase === 'idle' ? '' : phase === 'done' ? 'done' : phase;
+    setPhaseClass(phase === 'idle' ? '' : phase);
 
-    // Labels
     if (phase === 'idle') {
       phaseLbl.textContent = 'Ready';
       nextLbl.textContent  = 'tap play to start';
     } else if (phase === 'work') {
       phaseLbl.textContent = 'Work';
-      const isLast = round >= cfg.rounds;
-      nextLbl.textContent  = isLast ? 'last round!' : `next: rest ${cfg.rest}s`;
+      nextLbl.textContent  = round >= cfg.rounds ? 'last round!' : `next: rest ${cfg.rest}s`;
     } else if (phase === 'rest') {
       phaseLbl.textContent = 'Rest';
       nextLbl.textContent  = `next: round ${round + 1} — work ${cfg.work}s`;
@@ -1014,11 +1329,9 @@
     rCur.textContent = round;
     rTot.textContent = cfg.rounds;
 
-    // Play / pause icons
     icoPlay.style.display  = running ? 'none'  : 'block';
     icoPause.style.display = running ? 'block' : 'none';
 
-    // Overall progress
     const totalIntervals = cfg.rounds * 2 - 1;
     let done = (round - 1) * 2;
     if (phase === 'rest') done += 1;
@@ -1026,8 +1339,7 @@
     progFill.style.width = `${pct * 100}%`;
     progPct.textContent  = `${Math.round(pct * 100)}% complete`;
 
-    const totalSec = cfg.rounds * cfg.work + (cfg.rounds - 1) * cfg.rest;
-    totalTime.textContent = `Total: ${fmt(totalSec)}`;
+    totalTime.textContent = `Total: ${fmt(cfg.rounds * cfg.work + (cfg.rounds - 1) * cfg.rest)}`;
 
     renderDots();
   }
@@ -1037,7 +1349,7 @@
     for (let i = 1; i <= cfg.rounds; i++) {
       const d = document.createElement('div');
       d.className = 'dot';
-      if (i < round) d.classList.add('done');
+      if (i < round)                            d.classList.add('done');
       else if (i === round && phase !== 'idle') d.classList.add('active');
       dotsWrap.appendChild(d);
     }
@@ -1050,14 +1362,8 @@
       cdRunning = true;
       const steps = ['3','2','1','GO!'];
       let i = 0;
-
       function step() {
-        if (i >= steps.length) {
-          cdNum.classList.remove('pop');
-          cdRunning = false;
-          res();
-          return;
-        }
+        if (i >= steps.length) { cdNum.classList.remove('pop'); cdRunning = false; res(); return; }
         cdNum.textContent = steps[i];
         sndCd(steps[i] === 'GO!' ? 0 : Number(steps[i]));
         buzz(steps[i] === 'GO!' ? [80,40,80] : 40);
@@ -1073,22 +1379,17 @@
 
   // ── Timer core ────────────────────────────────────────
   function beginPhase(p, dur) {
-    phase  = p;
-    tPhase = dur;
-    tRem   = dur;
+    phase = p; tPhase = dur; tRem = dur;
     milestones = new Set();
-
     if (p === 'work') { sndWorkStart(); buzz(120); }
     else              { sndRestStart(); buzz([80,50,80]); }
-
     startStint();
     render();
   }
 
   function startStint() {
-    startMs  = Date.now();
-    startRem = tRem;
-    running  = true;
+    startMs = Date.now(); startRem = tRem;
+    running = true;
     clearInterval(ivl);
     ivl = setInterval(tick, 80);
   }
@@ -1098,51 +1399,59 @@
     const elapsed = Math.floor((Date.now() - startMs) / 1000);
     const nr = Math.max(0, startRem - elapsed);
     if (nr === tRem) return;
-
-    const prev = tRem;
     tRem = nr;
 
-    // Tick animation on change
     timeVal.classList.remove('tick');
     void timeVal.offsetWidth;
     timeVal.classList.add('tick');
 
-    // Countdown beeps for last 5s of work
     if (phase === 'work' && nr <= 5 && nr > 0) sndBeep(nr === 1);
-
-    // Milestone motivation
     checkMoti(phase, nr);
-
     render();
-
     if (nr === 0) advance();
   }
 
   function advance() {
-    clearInterval(ivl);
-    running = false;
-
+    clearInterval(ivl); running = false;
     if (phase === 'work') {
-      if (round >= cfg.rounds) {
-        finish();
-      } else {
-        beginPhase('rest', cfg.rest);
-      }
+      if (round >= cfg.rounds) finish();
+      else beginPhase('rest', cfg.rest);
     } else if (phase === 'rest') {
       round++;
       beginPhase('work', cfg.work);
     }
   }
 
+  // ── Finish — Post-Workout Physiological Engine ────────
   function finish() {
     phase = 'done';
     dropWake();
     sndDone();
     buzz([200,100,200,100,400]);
+
+    // Save streak for today
+    recordWorkout();
+
+    // Show streak achievement on done screen
+    const ds  = q('done-streak');
+    const dsT = q('done-streak-txt');
+    if (streak.count >= 2) {
+      const milestoneMsg = { 3:'3-day streak! 🎯', 7:'One week! 🔥', 14:'Two weeks! ⚡', 30:'30-day legend! 👑' };
+      dsT.textContent = milestoneMsg[streak.count] || `${streak.count}-day streak!`;
+      ds.style.display = 'flex';
+    } else {
+      ds.style.display = 'none';
+    }
+    updateStreakBadge();
+
     render();
-    doneSub.textContent = pick(DONE_MSGS);
+
     setTimeout(() => {
       doneScr.classList.add('show');
+      // Rotate starting fact per workout count so user sees variety
+      const wc = parseInt(localStorage.getItem('hiit_wcount') || '0') + 1;
+      localStorage.setItem('hiit_wcount', wc);
+      startFactRotation(wc % PHYSIO_FACTS.length);
       confetti();
     }, 400);
   }
@@ -1160,9 +1469,9 @@
       return;
     }
 
-    // Start fresh
     if (phase === 'idle' || phase === 'done') {
       doneScr.classList.remove('show');
+      stopFactRotation();
       moti.classList.remove('show');
       resetState(false);
       await acquireWake();
@@ -1171,7 +1480,6 @@
       return;
     }
 
-    // Resume
     await acquireWake();
     startStint();
     render();
@@ -1179,6 +1487,7 @@
 
   function resetState(doRender = true) {
     clearInterval(ivl);
+    stopFactRotation();
     running = false;
     phase   = 'idle';
     round   = 1;
@@ -1194,27 +1503,15 @@
   function skip() {
     if (phase === 'idle' || phase === 'done' || cdRunning) return;
     const was = running;
-    clearInterval(ivl);
-    running = false;
-    tRem = 0;
+    clearInterval(ivl); running = false; tRem = 0;
     if (was) {
       advance();
     } else {
-      // advance and stay paused
       if (phase === 'work') {
         if (round >= cfg.rounds) { finish(); }
-        else {
-          phase = 'rest'; tPhase = cfg.rest; tRem = cfg.rest;
-          milestones = new Set();
-          sndRestStart();
-          render();
-        }
+        else { phase = 'rest'; tPhase = cfg.rest; tRem = cfg.rest; milestones = new Set(); sndRestStart(); render(); }
       } else if (phase === 'rest') {
-        round++;
-        phase = 'work'; tPhase = cfg.work; tRem = cfg.work;
-        milestones = new Set();
-        sndWorkStart();
-        render();
+        round++; phase = 'work'; tPhase = cfg.work; tRem = cfg.work; milestones = new Set(); sndWorkStart(); render();
       }
     }
   }
@@ -1228,10 +1525,8 @@
         el.className = 'confetti-p';
         const sz = 5 + Math.random() * 9;
         el.style.cssText = [
-          `left:${Math.random()*100}vw`,
-          `top:-12px`,
-          `width:${sz}px`,
-          `height:${sz}px`,
+          `left:${Math.random()*100}vw`, `top:-12px`,
+          `width:${sz}px`, `height:${sz}px`,
           `background:${clrs[Math.floor(Math.random()*clrs.length)]}`,
           `border-radius:${Math.random()>.4 ? '50%' : '2px'}`,
           `animation:cfall ${1.4+Math.random()*2}s ${Math.random()*.6}s ease-in forwards`,
@@ -1243,7 +1538,7 @@
   }
 
   // ── Settings UI ───────────────────────────────────────
-  function openSettings() { sPanel.classList.add('open'); sOverlay.classList.add('on'); }
+  function openSettings()  { sPanel.classList.add('open');    sOverlay.classList.add('on');    }
   function closeSettings() { sPanel.classList.remove('open'); sOverlay.classList.remove('on'); }
 
   function syncSettingsUI() {
@@ -1255,6 +1550,7 @@
     q('cd-toggle').checked     = cfg.countdown;
   }
 
+  // Stepper buttons
   document.querySelectorAll('[data-key]').forEach(btn => {
     btn.addEventListener('click', () => {
       const key = btn.dataset.key;
@@ -1264,31 +1560,52 @@
       cfg[key] = Math.max(mn, Math.min(mx, cfg[key] + d));
       saveCfg();
       syncSettingsUI();
-      // Reset idle state to reflect new values
       if (phase === 'idle' || phase === 'done') resetState();
     });
   });
 
-  q('vol-slider').addEventListener('input', e => {
-    cfg.volume = parseFloat(e.target.value); saveCfg();
-  });
-  q('snd-toggle').addEventListener('change', e => {
-    cfg.sound = e.target.checked; saveCfg();
-  });
-  q('cd-toggle').addEventListener('change', e => {
-    cfg.countdown = e.target.checked; saveCfg();
+  q('vol-slider').addEventListener('input',  e => { cfg.volume   = parseFloat(e.target.value); saveCfg(); });
+  q('snd-toggle').addEventListener('change', e => { cfg.sound    = e.target.checked; saveCfg(); });
+  q('cd-toggle').addEventListener('change',  e => { cfg.countdown = e.target.checked; saveCfg(); });
+
+  // Theme buttons
+  document.querySelectorAll('.theme-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('locked')) {
+        showToast('🔒 Premium theme — coming soon!');
+        return;
+      }
+      const name = btn.dataset.theme;
+      applyTheme(name);
+      saveTheme(name);
+    });
   });
 
   // ── Event wiring ──────────────────────────────────────
-  btnPlay.addEventListener('click',    togglePlay);
-  btnReset.addEventListener('click',   () => resetState());
-  btnSkip.addEventListener('click',    skip);
-  btnAgain.addEventListener('click',   () => { doneScr.classList.remove('show'); resetState(); });
+  btnPlay.addEventListener('click', togglePlay);
+  q('btn-reset').addEventListener('click', () => resetState());
+  q('btn-skip').addEventListener('click',  skip);
+  q('btn-again').addEventListener('click', () => resetState());
   q('btn-settings').addEventListener('click', openSettings);
-  q('s-close').addEventListener('click',     closeSettings);
-  sOverlay.addEventListener('click',         closeSettings);
+  q('s-close').addEventListener('click',      closeSettings);
+  sOverlay.addEventListener('click',          closeSettings);
 
-  // Keyboard
+  // Streak modal buttons
+  q('btn-shield').addEventListener('click', useShield);
+  q('btn-fresh').addEventListener('click',  startFresh);
+  // Backdrop tap = dismiss (streak stays broken; modal won't reappear today)
+  q('streak-modal').addEventListener('click', e => {
+    if (e.target === q('streak-modal')) hideStreakModal();
+  });
+
+  // Fact card tap — advance to next fact and reset rotation timer
+  q('fact-card').addEventListener('click', () => {
+    clearInterval(factTimer);
+    showFact(factIdx + 1);
+    factTimer = setInterval(() => showFact(factIdx + 1), 5000);
+  });
+
+  // Keyboard shortcuts
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -1296,15 +1613,20 @@
     if (e.code === 'KeyS')  skip();
   });
 
-  // Unlock audio on first touch (iOS requirement)
-  const unlockAudio = () => { ensureAudio(); };
+  // Unlock AudioContext on first gesture (iOS requirement)
+  const unlockAudio = () => ensureAudio();
   document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
   document.addEventListener('click',      unlockAudio, { once: true });
 
   // ── Boot ──────────────────────────────────────────────
   loadCfg();
+  loadTheme();    // apply before first paint to prevent theme flash
+  loadStreak();
   syncSettingsUI();
   resetState();
+
+  // Delay streak check so the user orients to the app first
+  setTimeout(checkStreakOnOpen, 400);
 
   </script>
 </body>
