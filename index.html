@@ -1227,19 +1227,20 @@
   }
 
   // ── App state ─────────────────────────────────────────
-  let phase      = 'idle';
-  let round      = 1;
-  let tRem       = cfg.work;
-  let tPhase     = cfg.work;
-  let running    = false;
-  let startMs    = 0;
-  let startRem   = 0;
-  let ivl        = null;
-  let wakeLock   = null;
-  let milestones = new Set();
-  let cdRunning  = false;
-  let motiLast   = 0;
-  let motiTimer  = null;
+  let phase            = 'idle';
+  let round            = 1;
+  let tRem             = cfg.work;
+  let tPhase           = cfg.work;
+  let running          = false;
+  let startMs          = 0;
+  let startRem         = 0;
+  let ivl              = null;
+  let wakeLock         = null;
+  let milestones       = new Set();
+  let cdRunning        = false;
+  let motiLast         = 0;
+  let motiTimer        = null;
+  let showQuoteThisRest = false; // ~50% of rest intervals show a quote
 
   // ── DOM refs ──────────────────────────────────────────
   const q = id => document.getElementById(id);
@@ -1569,9 +1570,16 @@
       }
     } else if (phase === 'rest') {
       phaseLbl.textContent = 'Rest';
-      nextLbl.textContent  = `next: round ${round + 1} — work ${cfg.work}s`;
+      // Show next exercise name when a preset is active, otherwise show round info
+      if (activePreset) {
+        const moves   = activePreset === 'cardio' ? CARDIO_MOVES : STRENGTH_MOVES;
+        const nextMove = moves[round % moves.length];
+        nextLbl.textContent = `up next: ${nextMove}`;
+      } else {
+        nextLbl.textContent = `next: round ${round + 1} — work ${cfg.work}s`;
+      }
       moveSub.classList.remove('show');
-      restQuoteWrap.classList.add('show');
+      restQuoteWrap.classList.toggle('show', showQuoteThisRest);
       q('preset-wrap').classList.add('hidden');
     } else if (phase === 'done') {
       phaseLbl.textContent = 'Done!';
@@ -1639,10 +1647,13 @@
       sndWorkStart(); buzz(120);
     } else {
       sndRestStart(); buzz([80,50,80]);
-      // Pick and display rest-period quote
-      const q_ = pick(REST_QUOTES);
-      restQuoteText.textContent = `"${q_.text}"`;
-      restQuoteAttr.textContent = q_.attr;
+      // Show a quote on roughly half of rest intervals for variety
+      showQuoteThisRest = Math.random() < 0.5;
+      if (showQuoteThisRest) {
+        const q_ = pick(REST_QUOTES);
+        restQuoteText.textContent = `"${q_.text}"`;
+        restQuoteAttr.textContent = q_.attr;
+      }
     }
     startStint();
     render();
@@ -1767,9 +1778,12 @@
       if (phase === 'work') {
         if (round >= cfg.rounds) { finish(); }
         else {
-          const q_ = pick(REST_QUOTES);
-          restQuoteText.textContent = `"${q_.text}"`;
-          restQuoteAttr.textContent = q_.attr;
+          showQuoteThisRest = Math.random() < 0.5;
+          if (showQuoteThisRest) {
+            const q_ = pick(REST_QUOTES);
+            restQuoteText.textContent = `"${q_.text}"`;
+            restQuoteAttr.textContent = q_.attr;
+          }
           phase = 'rest'; tPhase = cfg.rest; tRem = cfg.rest;
           milestones = new Set(); sndRestStart(); render();
         }
