@@ -929,6 +929,17 @@
 
     <div class="s-row">
       <div>
+        <div class="s-lbl">Voice Coach</div>
+        <div class="s-sub">reads exercises &amp; milestones aloud</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="tts-toggle">
+        <span class="tog-sl"></span>
+      </label>
+    </div>
+
+    <div class="s-row">
+      <div>
         <div class="s-lbl">3-2-1 Countdown</div>
         <div class="s-sub">before each workout starts</div>
       </div>
@@ -1133,8 +1144,12 @@
 
   // ── Workout Preset Movements ──────────────────────────
   const CARDIO_MOVES = [
+    // Loop 1
     'Jumping Jacks', 'High Knees', 'Mountain Climbers',
     'Burpees', 'Butt Kicks', 'Scissor Squats', 'Russian Twists',
+    // Loop 2
+    'Speed Skaters', 'Squat Jumps', 'Box Steps',
+    'Lateral Shuffles', 'Jump Lunges', 'Plank Jacks', 'Inchworms',
   ];
   const STRENGTH_MOVES = [
     'Push-Ups', 'Pike Push-Ups', 'Plank Shoulder Taps',
@@ -1173,7 +1188,7 @@
   };
 
   // ── Settings ──────────────────────────────────────────
-  let cfg = { work: 40, rest: 20, rounds: 8, volume: 0.7, sound: true, countdown: true };
+  let cfg = { work: 40, rest: 20, rounds: 8, volume: 0.7, sound: true, countdown: true, tts: false };
 
   function loadCfg() {
     try { Object.assign(cfg, JSON.parse(localStorage.getItem('hiit_cfg') || '{}')); } catch(_) {}
@@ -1241,6 +1256,7 @@
   let motiLast         = 0;
   let motiTimer        = null;
   let showQuoteThisRest = false; // ~50% of rest intervals show a quote
+  let ttsMilestones     = new Set(); // quarter-interval callouts, cleared each workout
 
   // ── DOM refs ──────────────────────────────────────────
   const q = id => document.getElementById(id);
@@ -1354,6 +1370,38 @@
     if (!pool) return;
     milestones.add(key);
     showMoti(pick(pool));
+  }
+
+  // ── Voice Coach (Web Speech API) ─────────────────────
+  function speak(text, onDone) {
+    if (!cfg.tts || !('speechSynthesis' in window)) { if (onDone) onDone(); return; }
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.rate   = 1.05;
+    utt.pitch  = 1.0;
+    utt.volume = Math.max(0.65, cfg.volume);
+    if (onDone) utt.onend = onDone;
+    speechSynthesis.speak(utt);
+  }
+
+  function checkQuarterMilestone() {
+    if (!activePreset || cfg.rounds < 4) return;
+    const remaining = cfg.rounds - round + 1; // including current round
+    const targets = [
+      Math.round(cfg.rounds * 0.75),
+      Math.round(cfg.rounds * 0.50),
+      Math.round(cfg.rounds * 0.25),
+    ];
+    if (!targets.includes(remaining)) return;
+    const key = `qm_${remaining}`;
+    if (ttsMilestones.has(key)) return;
+    ttsMilestones.add(key);
+    const isHalf    = remaining === Math.round(cfg.rounds * 0.50);
+    const isAlmost  = remaining === Math.round(cfg.rounds * 0.25);
+    const msg = isHalf   ? `Halfway there! Only ${remaining} exercises left.`
+              : isAlmost ? `Almost done! Only ${remaining} exercises left!`
+                         : `Only ${remaining} exercises left!`;
+    speak(msg);
   }
 
   // ── Toast ─────────────────────────────────────────────
@@ -1645,8 +1693,16 @@
     milestones = new Set();
     if (p === 'work') {
       sndWorkStart(); buzz(120);
+      const move = getCurrentMove();
+      if (move) {
+        // Announce exercise name, then check quarter milestone after speech ends
+        speak(move, () => setTimeout(checkQuarterMilestone, 300));
+      } else {
+        checkQuarterMilestone();
+      }
     } else {
       sndRestStart(); buzz([80,50,80]);
+      speak('Rest.');
       // Show a quote on roughly half of rest intervals for variety
       showQuoteThisRest = Math.random() < 0.5;
       if (showQuoteThisRest) {
@@ -1679,6 +1735,10 @@
 
     if (phase === 'work' && nr <= 5 && nr > 0) sndBeep(nr === 1);
     checkMoti(phase, nr);
+    if (phase === 'work' && nr === 30 && !milestones.has('tts_30')) {
+      milestones.add('tts_30');
+      speak('Only 30 seconds left.');
+    }
     render();
     if (nr === 0) advance();
   }
@@ -1700,6 +1760,7 @@
     dropWake();
     sndDone();
     buzz([200,100,200,100,400]);
+    speak('Workout complete! Great job!');
     recordWorkout();
 
     const ds  = q('done-streak');
@@ -1760,7 +1821,9 @@
     round   = 1;
     tRem    = cfg.work;
     tPhase  = cfg.work;
-    milestones = new Set();
+    milestones    = new Set();
+    ttsMilestones = new Set();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     dropWake();
     moti.classList.remove('show');
     doneScr.classList.remove('show');
@@ -1825,6 +1888,7 @@
     q('sv-rounds').textContent = cfg.rounds;
     q('vol-slider').value      = cfg.volume;
     q('snd-toggle').checked    = cfg.sound;
+    q('tts-toggle').checked    = cfg.tts;
     q('cd-toggle').checked     = cfg.countdown;
   }
 
@@ -1845,6 +1909,7 @@
 
   q('vol-slider').addEventListener('input',  e => { cfg.volume    = parseFloat(e.target.value); saveCfg(); });
   q('snd-toggle').addEventListener('change', e => { cfg.sound     = e.target.checked; saveCfg(); });
+  q('tts-toggle').addEventListener('change', e => { cfg.tts       = e.target.checked; saveCfg(); });
   q('cd-toggle').addEventListener('change',  e => { cfg.countdown = e.target.checked; saveCfg(); });
 
   // Theme buttons
