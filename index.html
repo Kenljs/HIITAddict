@@ -1148,8 +1148,8 @@
     'Jumping Jacks', 'High Knees', 'Mountain Climbers',
     'Burpees', 'Butt Kicks', 'Scissor Squats', 'Russian Twists',
     // Loop 2
-    'Speed Skaters', 'Squat Jumps', 'Box Steps',
-    'Lateral Shuffles', 'Jump Lunges', 'Plank Jacks', 'Inchworms',
+    'Lunges', 'Butt Kicks', 'Bicycle Crunches',
+    'Leg Flutters', 'Plank Jacks', 'Shadow Boxing',
   ];
   const STRENGTH_MOVES = [
     'Push Ups', 'Pike Push Ups', 'Plank Shoulder Taps',
@@ -1761,6 +1761,10 @@
     if (phase === 'work' && nr === 30 && !milestones.has('tts_30')) {
       milestones.add('tts_30');
       speak('Only 30 seconds left.');
+    }
+    if (phase === 'work' && nr === 15 && !milestones.has('tts_15')) {
+      milestones.add('tts_15');
+      speak('Only 15 seconds left!');
     }
     render();
     if (nr === 0) advance();
