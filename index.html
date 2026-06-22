@@ -1152,9 +1152,9 @@
     'Lateral Shuffles', 'Jump Lunges', 'Plank Jacks', 'Inchworms',
   ];
   const STRENGTH_MOVES = [
-    'Push-Ups', 'Pike Push-Ups', 'Plank Shoulder Taps',
+    'Push Ups', 'Pike Push Ups', 'Plank Shoulder Taps',
     'Bulgarian Split Squat', 'Lunges', 'Bodyweight Squats',
-    'Bicycle Crunches', 'V-Ups', 'Plank Hold',
+    'Bicycle Crunches', 'V Ups', 'Plank Hold',
   ];
 
   // ── Mid-workout Motivational Messages ────────────────
@@ -1373,13 +1373,36 @@
   }
 
   // ── Voice Coach (Web Speech API) ─────────────────────
+  let ttsVoice = null;
+
+  function selectBestVoice() {
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+    // Priority: Natural/Neural en-US → any en-US → any English → first available
+    ttsVoice =
+      voices.find(v => /natural|neural/i.test(v.name) && v.lang.startsWith('en-US')) ||
+      voices.find(v => /aria|jenny|guy|zira|david/i.test(v.name) && v.lang.startsWith('en')) ||
+      voices.find(v => v.lang.startsWith('en-US')) ||
+      voices.find(v => v.lang.startsWith('en')) ||
+      voices[0];
+  }
+
+  // Voices load asynchronously in most browsers
+  if ('speechSynthesis' in window) {
+    speechSynthesis.addEventListener('voiceschanged', selectBestVoice);
+    selectBestVoice();
+  }
+
   function speak(text, onDone) {
     if (!cfg.tts || !('speechSynthesis' in window)) { if (onDone) onDone(); return; }
     window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.rate   = 1.05;
+    // Hyphens cause letters to be spelled out — replace with spaces
+    const cleaned = text.replace(/-/g, ' ');
+    const utt = new SpeechSynthesisUtterance(cleaned);
+    utt.rate   = 0.95;
     utt.pitch  = 1.0;
     utt.volume = Math.max(0.65, cfg.volume);
+    if (ttsVoice) utt.voice = ttsVoice;
     if (onDone) utt.onend = onDone;
     speechSynthesis.speak(utt);
   }
