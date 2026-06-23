@@ -768,6 +768,56 @@
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── Feedback modal ─────────────────────────────────── */
+    #fb-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 92; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #fb-overlay.on { opacity: 1; pointer-events: all; }
+
+    #fb-modal {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      width: 100%; max-width: 430px;
+      background: var(--surface-hi);
+      border-radius: 28px 28px 0 0;
+      padding: 0 24px max(env(safe-area-inset-bottom), 28px);
+      z-index: 93;
+      transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    #fb-modal.open { transform: translateX(-50%) translateY(0); }
+
+    #fb-text {
+      width: 100%; resize: none;
+      background: var(--surface); color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 12px 14px;
+      font-size: 14px; font-family: inherit; line-height: 1.5;
+      margin-bottom: 14px; outline: none;
+      transition: border-color 0.2s;
+    }
+    #fb-text:focus { border-color: var(--accent-idle); }
+    #fb-text::placeholder { color: var(--text-faint); }
+
+    #fb-submit {
+      width: 100%; background: var(--accent-work); color: white; border: none;
+      border-radius: 16px; padding: 15px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    #fb-submit:active { transform: scale(0.97); }
+    #fb-submit:disabled { opacity: 0.45; cursor: default; }
+
+    .btn-feedback {
+      width: 100%; background: rgba(255,255,255,0.06); color: var(--text-dim);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
+      padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer;
+      margin-top: 20px; transition: background 0.2s, color 0.2s;
+    }
+    .btn-feedback:active { background: rgba(255,255,255,0.1); color: var(--text); }
+
     /* ── Confetti ───────────────────────────────────────── */
     .confetti-p { position: fixed; pointer-events: none; z-index: 80; border-radius: 2px; }
     @keyframes cfall { to { transform: translateY(105vh) rotate(540deg); opacity: 0; } }
@@ -858,6 +908,21 @@
       <button class="btn-shield" id="btn-shield">Use Shield 🛡️</button>
       <button class="btn-fresh"  id="btn-fresh">Start Fresh</button>
     </div>
+  </div>
+
+  <!-- ── Feedback Modal ──────────────────────────────────────── -->
+  <div id="fb-overlay"></div>
+  <div id="fb-modal">
+    <div class="sm-handle"></div>
+    <div class="s-hdr">
+      <h2>Send Feedback</h2>
+      <button class="s-close" id="fb-close" aria-label="Close feedback">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-dim);line-height:1.5;margin-bottom:16px">
+      Help us improve HIIT Addict — what would make it better?
+    </p>
+    <textarea id="fb-text" rows="5" placeholder="What's on your mind? Bugs, ideas, anything..."></textarea>
+    <button id="fb-submit">Send Feedback</button>
   </div>
 
   <!-- ── Completion Screen ────────────────────────────────── -->
@@ -1001,6 +1066,8 @@
         <div class="theme-lock">🔒</div>
       </button>
     </div>
+
+    <button class="btn-feedback" id="btn-feedback">Send Feedback</button>
 
   </div>
 
@@ -1290,7 +1357,6 @@
   let motiLast         = 0;
   let motiTimer        = null;
   let showQuoteThisRest = false; // ~50% of rest intervals show a quote
-  let ttsMilestones     = new Set(); // quarter-interval callouts, cleared each workout
 
   // ── DOM refs ──────────────────────────────────────────
   const q = id => document.getElementById(id);
@@ -1358,6 +1424,15 @@
   }
   function sndDone() {
     [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, 0.32, 'triangle', 0.5), i * 115));
+  }
+  function sndWarningBeep() {
+    tone(660, 0.09, 'square', 0.28);
+    setTimeout(() => tone(880, 0.09, 'square', 0.32), 140);
+  }
+  function sndTenAlert() {
+    tone(784,  0.12, 'triangle', 0.45);
+    setTimeout(() => tone(1047, 0.12, 'triangle', 0.50), 120);
+    setTimeout(() => tone(1319, 0.22, 'triangle', 0.55), 240);
   }
 
   // ── Wake Lock ─────────────────────────────────────────
@@ -1439,26 +1514,6 @@
     if (ttsVoice) utt.voice = ttsVoice;
     if (onDone) utt.onend = onDone;
     speechSynthesis.speak(utt);
-  }
-
-  function checkQuarterMilestone() {
-    if (!activePreset || cfg.rounds < 4) return;
-    const remaining = cfg.rounds - round + 1; // including current round
-    const targets = [
-      Math.round(cfg.rounds * 0.75),
-      Math.round(cfg.rounds * 0.50),
-      Math.round(cfg.rounds * 0.25),
-    ];
-    if (!targets.includes(remaining)) return;
-    const key = `qm_${remaining}`;
-    if (ttsMilestones.has(key)) return;
-    ttsMilestones.add(key);
-    const isHalf    = remaining === Math.round(cfg.rounds * 0.50);
-    const isAlmost  = remaining === Math.round(cfg.rounds * 0.25);
-    const msg = isHalf   ? `Halfway there! Only ${remaining} exercises left.`
-              : isAlmost ? `Almost done! Only ${remaining} exercises left!`
-                         : `Only ${remaining} exercises left!`;
-    speak(msg);
   }
 
   // ── Toast ─────────────────────────────────────────────
@@ -1751,12 +1806,7 @@
     if (p === 'work') {
       sndWorkStart(); buzz(120);
       const move = getCurrentMove();
-      if (move) {
-        // Announce exercise name, then check quarter milestone after speech ends
-        speak(move, () => setTimeout(checkQuarterMilestone, 300));
-      } else {
-        checkQuarterMilestone();
-      }
+      if (move) speak(move);
     } else {
       sndRestStart(); buzz([80,50,80]);
       speak('Rest.');
@@ -1790,15 +1840,20 @@
     void timeVal.offsetWidth;
     timeVal.classList.add('tick');
 
-    if (phase === 'work' && nr <= 5 && nr > 0) sndBeep(nr === 1);
+    if (phase === 'work') {
+      if (nr === 10)              sndTenAlert();
+      else if (nr > 0 && nr < 10) sndBeep(nr === 1);
+    }
     checkMoti(phase, nr);
     if (phase === 'work' && nr === 30 && !milestones.has('tts_30')) {
       milestones.add('tts_30');
-      speak('Only 30 seconds left.');
+      if (round <= 3) speak('Only 30 seconds left.');
+      else sndWarningBeep();
     }
     if (phase === 'work' && nr === 15 && !milestones.has('tts_15')) {
       milestones.add('tts_15');
-      speak('Only 15 seconds left!');
+      if (round <= 3) speak('Only 15 seconds left!');
+      else sndWarningBeep();
     }
     render();
     if (nr === 0) advance();
@@ -1882,8 +1937,7 @@
     round   = 1;
     tRem    = cfg.work;
     tPhase  = cfg.work;
-    milestones    = new Set();
-    ttsMilestones = new Set();
+    milestones = new Set();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     dropWake();
     moti.classList.remove('show');
@@ -1995,6 +2049,45 @@
     btn.addEventListener('click', () => setPresetDuration(parseInt(btn.dataset.mins)));
   });
 
+  // ── Feedback modal ────────────────────────────────────
+  function openFeedback() {
+    closeSettings();
+    q('fb-overlay').classList.add('on');
+    q('fb-modal').classList.add('open');
+    setTimeout(() => q('fb-text').focus(), 350);
+  }
+  function closeFeedback() {
+    q('fb-overlay').classList.remove('on');
+    q('fb-modal').classList.remove('open');
+  }
+  async function submitFeedback() {
+    const text = q('fb-text').value.trim();
+    if (!text) { showToast('Please write something first.'); return; }
+    const btn = q('fb-submit');
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+    try {
+      // Replace YOUR_FORM_ID with your Formspree form ID from formspree.io
+      const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, app: 'HIIT Addict' }),
+      });
+      if (res.ok) {
+        q('fb-text').value = '';
+        closeFeedback();
+        showToast('Thanks! Feedback sent.');
+      } else {
+        showToast('Could not send — try again.');
+      }
+    } catch(_) {
+      showToast('No connection — try again.');
+    } finally {
+      btn.textContent = 'Send Feedback';
+      btn.disabled = false;
+    }
+  }
+
   // ── Event wiring ──────────────────────────────────────
   btnPlay.addEventListener('click', togglePlay);
   q('btn-reset').addEventListener('click', () => resetState());
@@ -2003,6 +2096,14 @@
   q('btn-settings').addEventListener('click', openSettings);
   q('s-close').addEventListener('click',      closeSettings);
   sOverlay.addEventListener('click',          closeSettings);
+
+  q('btn-feedback').addEventListener('click', openFeedback);
+  q('fb-close').addEventListener('click',    closeFeedback);
+  q('fb-overlay').addEventListener('click',  closeFeedback);
+  q('fb-submit').addEventListener('click',   submitFeedback);
+  q('fb-text').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitFeedback();
+  });
 
   q('btn-shield').addEventListener('click', useShield);
   q('btn-fresh').addEventListener('click',  startFresh);
@@ -2017,7 +2118,7 @@
   });
 
   document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     if (e.code === 'KeyR')  resetState();
     if (e.code === 'KeyS')  skip();
