@@ -782,12 +782,46 @@
     }
     #wake-dot.on { opacity: 1; animation: wdPulse 2.5s infinite; }
     @keyframes wdPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+    /* ── Fullscreen button (fixed, below settings gear) ─── */
+    #btn-fs {
+      position: fixed;
+      top: calc(max(env(safe-area-inset-top), 16px) + 52px);
+      right: 24px;
+      width: 36px; height: 36px;
+      background: var(--surface-hi);
+      border: none; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-faint);
+      transition: transform 0.15s, color 0.2s;
+      z-index: 5;
+    }
+    #btn-fs:active { transform: scale(0.9); }
   </style>
 </head>
 <body>
 
   <!-- Wake lock indicator -->
   <div id="wake-dot"></div>
+
+  <!-- Fullscreen toggle (sits just below the settings gear) -->
+  <button id="btn-fs" aria-label="Toggle fullscreen">
+    <svg id="ico-expand" width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+      <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+    </svg>
+    <svg id="ico-compress" width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+         style="display:none">
+      <path d="M8 3v3a2 2 0 0 1-2 2H3"/>
+      <path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
+      <path d="M3 16h3a2 2 0 0 1 2 2v3"/>
+      <path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
+    </svg>
+  </button>
 
   <!-- 3-2-1 countdown layer -->
   <div id="countdown-layer" aria-hidden="true">
@@ -978,24 +1012,6 @@
       <div class="streak-badge" id="streak-badge">
         🔥 <span id="streak-num">0</span>
       </div>
-
-      <button class="icon-btn" id="btn-fs" aria-label="Toggle fullscreen">
-        <svg id="ico-expand" width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
-          <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-          <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
-          <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-        </svg>
-        <svg id="ico-compress" width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             style="display:none">
-          <path d="M8 3v3a2 2 0 0 1-2 2H3"/>
-          <path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
-          <path d="M3 16h3a2 2 0 0 1 2 2v3"/>
-          <path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
-        </svg>
-      </button>
 
       <button class="icon-btn" id="btn-settings" aria-label="Open settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
