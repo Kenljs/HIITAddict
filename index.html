@@ -1308,6 +1308,12 @@
     return moves[(round - 1) % moves.length];
   }
 
+  function getNextMove() {
+    if (!activePreset) return null;
+    const moves = activePreset === 'cardio' ? CARDIO_MOVES : STRENGTH_MOVES;
+    return moves[round % moves.length];
+  }
+
   function setPreset(name) {
     activePreset   = (activePreset === name) ? null : name;
     presetDuration = null;
@@ -1809,7 +1815,12 @@
       if (move) speak(move);
     } else {
       sndRestStart(); buzz([80,50,80]);
-      speak('Rest.');
+      const nextMove = getNextMove();
+      if (nextMove) {
+        speak('Rest.', () => setTimeout(() => speak(`Next up: ${nextMove}`), 250));
+      } else {
+        speak('Rest.');
+      }
       // Show a quote on roughly half of rest intervals for variety
       showQuoteThisRest = Math.random() < 0.5;
       if (showQuoteThisRest) {
@@ -1847,12 +1858,12 @@
     checkMoti(phase, nr);
     if (phase === 'work' && nr === 30 && !milestones.has('tts_30')) {
       milestones.add('tts_30');
-      if (round <= 3) speak('Only 30 seconds left.');
+      if (round <= 2) speak('Only 30 seconds left.');
       else sndWarningBeep();
     }
     if (phase === 'work' && nr === 15 && !milestones.has('tts_15')) {
       milestones.add('tts_15');
-      if (round <= 3) speak('Only 15 seconds left!');
+      if (round <= 2) speak('Only 15 seconds left!');
       else sndWarningBeep();
     }
     render();
