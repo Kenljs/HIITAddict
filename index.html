@@ -646,6 +646,32 @@
     }
     .btn-again:active { transform: scale(0.94); }
 
+    /* ── Donation card on completion screen ─────────────── */
+    .donation-card {
+      width: 100%; max-width: 320px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px 20px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .donation-ico { font-size: 28px; margin-bottom: 8px; }
+    .donation-msg {
+      font-size: 13px; color: var(--text-dim);
+      line-height: 1.55; margin-bottom: 14px;
+    }
+    .donation-link {
+      display: inline-block;
+      background: linear-gradient(135deg, #ffd700, #ff8c00);
+      color: #000; text-decoration: none;
+      border-radius: 14px; padding: 10px 24px;
+      font-size: 14px; font-weight: 700;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .donation-link:active { transform: scale(0.96); opacity: 0.85; }
+    #done-screen.show .donation-card { animation: riseUp 0.35s 0.95s ease both; }
+
     /* ── Physiological Fact Card ─────────────────────────── */
     .fact-card {
       background: var(--surface);
@@ -798,8 +824,8 @@
       margin-bottom: 14px; outline: none;
       transition: border-color 0.2s;
     }
-    #fb-text:focus { border-color: var(--accent-idle); }
-    #fb-text::placeholder { color: var(--text-faint); }
+    #fb-text:focus, #fb-email:focus { border-color: var(--accent-idle); }
+    #fb-text::placeholder, #fb-email::placeholder { color: var(--text-faint); }
 
     #fb-submit {
       width: 100%; background: var(--accent-work); color: white; border: none;
@@ -905,7 +931,13 @@
     <p style="font-size:13px;color:var(--text-dim);line-height:1.5;margin-bottom:16px">
       Help us improve HIIT Addict — what would make it better?
     </p>
-    <textarea id="fb-text" rows="5" placeholder="What's on your mind? Bugs, ideas, anything..."></textarea>
+    <input id="fb-email" type="email" placeholder="Your email (optional)" autocomplete="email"
+           style="width:100%;background:var(--surface);color:var(--text);
+                  border:1px solid rgba(255,255,255,0.1);border-radius:14px;
+                  padding:11px 14px;font-size:14px;font-family:inherit;
+                  outline:none;margin-bottom:10px;
+                  transition:border-color 0.2s;">
+    <textarea id="fb-text" rows="4" placeholder="What's on your mind? Bugs, ideas, anything..."></textarea>
     <button id="fb-submit">Send Feedback</button>
   </div>
 
@@ -936,6 +968,16 @@
     <div class="done-streak" id="done-streak">
       <span>🔥</span>
       <span id="done-streak-txt">5-day streak!</span>
+    </div>
+
+    <div class="donation-card">
+      <div class="donation-ico">☕</div>
+      <p class="donation-msg">
+        This app is completely free — no ads, no sign-ups, just you and the work.
+        If it's helped you show up, I'd love a coffee in return.
+      </p>
+      <!-- Replace # with your Buy Me a Coffee or donation page URL -->
+      <a class="donation-link" href="#" target="_blank" rel="noopener">Buy me a coffee</a>
     </div>
 
     <button class="btn-again" id="btn-again">Go Again</button>
@@ -1169,7 +1211,7 @@
           </button>
           <button class="preset-tab" data-preset="strength">
             <div class="preset-tab-ico">💪</div>
-            <div class="preset-tab-name">Full Body</div>
+            <div class="preset-tab-name">Full Body Strength</div>
           </button>
         </div>
         <div class="dur-row" id="dur-row">
@@ -1257,7 +1299,8 @@
   ];
   const STRENGTH_MOVES = [
     'Push Ups', 'Pike Push Ups', 'Plank Shoulder Taps',
-    'Bulgarian Split Squat', 'Lunges', 'Bodyweight Squats',
+    'Left Bulgarian Split Squat', 'Right Bulgarian Split Squat',
+    'Left Lunge', 'Right Lunge', 'Bodyweight Squats',
     'Bicycle Crunches', 'V Ups', 'Plank Hold',
   ];
 
@@ -1855,8 +1898,12 @@
     timeVal.classList.add('tick');
 
     if (phase === 'work') {
-      if (nr === 10)              sndTenAlert();
-      else if (nr > 0 && nr < 10) sndBeep(nr === 1);
+      if (nr === 10) {
+        if (cfg.tts) speak('10');
+        else sndBeep(false);
+      } else if (nr > 0 && nr < 10) {
+        sndBeep(false);
+      }
     }
     checkMoti(phase, nr);
     if (phase === 'work' && nr === 30 && !milestones.has('tts_30')) {
@@ -2070,20 +2117,24 @@
     q('fb-modal').classList.remove('open');
   }
   async function submitFeedback() {
-    const text = q('fb-text').value.trim();
+    const text  = q('fb-text').value.trim();
+    const email = q('fb-email').value.trim();
     if (!text) { showToast('Please write something first.'); return; }
     const btn = q('fb-submit');
     btn.textContent = 'Sending…';
     btn.disabled = true;
     try {
+      const payload = { message: text, app: 'HIIT Addict' };
+      if (email) payload.email = email;
       // Replace YOUR_FORM_ID with your Formspree form ID from formspree.io
       const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
         method: 'POST',
         headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, app: 'HIIT Addict' }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
-        q('fb-text').value = '';
+        q('fb-text').value  = '';
+        q('fb-email').value = '';
         closeFeedback();
         showToast('Thanks! Feedback sent.');
       } else {
